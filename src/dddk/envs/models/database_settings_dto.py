@@ -30,7 +30,7 @@ class DatabaseSettingsDto(BaseModel):
         pattern = re.compile(
             r"^(?:postgres(?:ql)?|mysql|sqlite|oracle|mssql|postgresql\+psycopg)://"
             r"(?:[^:@]+(?::[^@]*)?@)?"
-            r"[^:/?#]+"
+            r"[^:/?#]*"
             r"(?:\:\d+)?"
             r"(?:\/[^?#]*)?"
             r"(?:\?[^#]*)?"
