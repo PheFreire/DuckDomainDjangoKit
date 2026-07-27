@@ -1,0 +1,14 @@
+[flake8]
+per-file-ignores =
+    __init__.py:F401
+# E501: line too long (handled by black)
+# W503: line break before binary operator (style preference)
+# B008: function call in default arg (intentional pattern for Pydantic DTO defaults)
+# E701/E704: single-line body stubs (intentional pattern for abstract interface methods)
+# E741: ambiguous variable name (used as short loop vars in list comprehensions)
+# B009/B010: getattr/setattr with constant (intentional internal pattern)
+# B042: exception super().__init__ — AppError has structured args, not pickle-compatible by design
+# E203: whitespace before ':' in slices (black formats complex slices with spaces)
+ignore = E501,W503,B008,E701,E704,E741,B009,B010,B042,E203
+extend-select = B
+max-line-length = 79

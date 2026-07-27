@@ -1,0 +1,67 @@
+[project]
+name = "duck-domain-django-kit"
+version = "0.1.0"
+description = "🦆 Domain and repository-layer building blocks for Django backends — DTOs, repository pattern, relation loader, error handling and env config."
+authors = [{ name = "Phe Pato", email = "pheprogrammer@gmail.com" }]
+readme = "README.md"
+license = "MIT"
+
+[project.urls]
+homepage = "https://pypi.org/project/duck-domain-django-kit/"
+repository = "https://github.com/PheFreire/DuckDomainDjangoKit"
+
+[tool.poetry]
+packages = [{ include = "dddk", from = "src" }]
+
+[tool.poetry.dependencies]
+python = ">=3.12"
+django = ">=5.0"
+duckdi = "^0.1.13"
+pydantic = "^2.11.5"
+toml = ">=0.10.2,<0.11.0"
+
+[tool.poetry.group.dev.dependencies]
+black = "^25.1.0"
+isort = "^6.0.1"
+flake8 = "^7.2.0"
+flake8-bugbear = "^25.11.29"
+bandit = "^1.8.3"
+mypy = "^1.15.0"
+django-stubs = "^5.2.0"
+pytest = "^8.3.5"
+pytest-django = "^4.11.1"
+autoflake = "^2.3.3"
+pyupgrade = "^3.21.2"
+
+[tool.pytest.ini_options]
+pythonpath = ["tests"]
+log_cli = true
+
+[tool.isort]
+profile = "black"
+force_grid_wrap = 1
+length_sort = true
+
+[tool.black]
+line-length = 79
+
+[tool.mypy]
+mypy_path = "src"
+explicit_package_bases = true
+plugins = ["pydantic.mypy"]
+ignore_missing_imports = true
+no_implicit_optional = true
+warn_return_any = true
+
+[[tool.mypy.overrides]]
+module = [
+    "dddk.crud.django.soft_delete_model",
+    "dddk.utils.parser",
+    "dddk.envs.adapters.envs_toml",
+    "dddk.error.app_error",
+]
+ignore_errors = true
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
