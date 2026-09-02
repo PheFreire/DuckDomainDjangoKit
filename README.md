@@ -39,8 +39,8 @@ pip install duck-domain-django-kit
   `HasManyRelationConfig`, `M2MRelationConfig`,
   `M2MWithPivotRelationConfig` to declaratively hydrate related data.
 - **Errors** — `AppError`, a structured application error base class.
-- **Envs** — `IEnvs` interface and a TOML-backed adapter for
-  environment/settings configuration.
+- **Envs** — `IEnvs` interface and an adapter exposing the database
+  connection settings from the `DATABASE_URL` environment variable.
 
 ```python
 from dddk import (

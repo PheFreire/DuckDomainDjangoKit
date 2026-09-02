@@ -4,32 +4,8 @@ from dddk import (
     AppError,
 )
 from dddk.envs.models import (
-    ApiSettingsDto,
-    LogSettingsDto,
-    DebugSettingsDto,
     DatabaseSettingsDto,
 )
-
-
-def test_api_settings_defaults():
-    settings = ApiSettingsDto()
-    assert settings.allowed_hosts == []
-    assert settings.cors_allowed_hosts == []
-
-
-def test_debug_settings_defaults():
-    settings = DebugSettingsDto()
-    assert settings.is_active is False
-    assert settings.labels == []
-    assert settings.levels == []
-
-
-def test_log_settings_defaults():
-    settings = LogSettingsDto()
-    assert settings.is_active is True
-    assert settings.indent == 3
-    assert settings.labels == []
-    assert settings.levels == []
 
 
 @pytest.mark.parametrize(
