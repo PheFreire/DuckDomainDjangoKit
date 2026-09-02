@@ -1,6 +1,6 @@
 [project]
 name = "duck-domain-django-kit"
-version = "0.1.1"
+version = "0.2.0"
 description = "🦆 Domain and repository-layer building blocks for Django backends — DTOs, repository pattern, relation loader, error handling and env config."
 authors = [{ name = "Phe Pato", email = "pheprogrammer@gmail.com" }]
 readme = "README.md"
