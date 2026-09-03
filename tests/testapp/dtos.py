@@ -40,6 +40,7 @@ class GadgetDto(BaseDto):
     uuid: str
     name: str
     widget_id: str
+    owner_id: str | None = None
     created_at: datetime
     updated_at: datetime
     deleted_at: datetime | None = None

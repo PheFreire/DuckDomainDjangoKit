@@ -9,6 +9,9 @@ from tests.testapp.dtos import (
 from dddk.crud.django.soft_delete_model import (
     SoftDeleteModel,
 )
+from dddk.crud.django.utils.get_if_active import (
+    get_if_active,
+)
 
 
 class Widget(SoftDeleteModel):
@@ -32,6 +35,13 @@ class Gadget(SoftDeleteModel):
     widget = models.ForeignKey(
         Widget, on_delete=models.CASCADE, related_name="gadgets"
     )
+    owner = models.ForeignKey(
+        Widget,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="owned_gadgets",
+    )
 
     class Meta:
         app_label = "testapp"
@@ -41,6 +51,7 @@ class Gadget(SoftDeleteModel):
             uuid=str(self.uuid),
             name=self.name,
             widget_id=str(self.widget_id),
+            owner_id=get_if_active(self.owner) if self.owner else None,
             created_at=self.created_at,
             updated_at=self.updated_at,
             deleted_at=self.deleted_at,

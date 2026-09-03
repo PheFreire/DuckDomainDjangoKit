@@ -48,3 +48,7 @@ class GadgetRepository(
     where_field_to_filter = {
         "widget_name": "widget__name",
     }
+
+
+class GadgetWithSelectRelatedRepository(GadgetRepository):
+    select_related_fields = ("owner",)

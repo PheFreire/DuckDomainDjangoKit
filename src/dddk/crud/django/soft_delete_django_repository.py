@@ -70,6 +70,9 @@ class SoftDeleteDjangoRepository(
         dto (Type[DTO]): Class of the DTO representing the entity.
         where_field_to_filter (Dict[str, str]): Mapping between field names in the
             `WHERE` DTO and Django ORM filter expressions.
+        select_related_fields (tuple[str, ...]): FK field names that `as_dto()`
+            dereferences (e.g. through `get_if_active`) and that should be joined
+            in the `find()` query via `select_related`, avoiding a query per row.
     """
 
     response: type[RESPONSE]
@@ -77,6 +80,7 @@ class SoftDeleteDjangoRepository(
     dto: type[DTO]
 
     where_field_to_filter: ClassVar[dict[str, str]] = {}
+    select_related_fields: ClassVar[tuple[str, ...]] = ()
 
     @cached_property
     def _model_fields(self) -> set[str]:
@@ -175,9 +179,12 @@ class SoftDeleteDjangoRepository(
             )
         }
 
+        queryset = self.model.objects.filter(**filters)
+        if self.select_related_fields:
+            queryset = queryset.select_related(*self.select_related_fields)
+
         result = [
-            self.response(**model.as_dto().model_dump())
-            for model in self.model.objects.filter(**filters)
+            self.response(**model.as_dto().model_dump()) for model in queryset
         ]
 
         return QueryResponse(result, self.model._meta.db_table, where)

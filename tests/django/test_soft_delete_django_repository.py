@@ -21,6 +21,7 @@ from tests.testapp.models import (
 from tests.testapp.repositories import (
     GadgetRepository,
     WidgetRepository,
+    GadgetWithSelectRelatedRepository,
 )
 
 pytestmark = pytest.mark.django_db
@@ -180,3 +181,51 @@ def test_delete_raises_app_error_when_not_found():
     with pytest.raises(AppError) as exc_info:
         WidgetRepository().delete(str(uuid4()))
     assert exc_info.value.code == 404
+
+
+def test_find_without_select_related_fields_queries_related_row_per_result(
+    django_assert_num_queries,
+):
+    owner = Widget.objects.create(name="owner")
+    widget = Widget.objects.create(name="widget")
+    for i in range(3):
+        Gadget.objects.create(name=f"gadget-{i}", widget=widget, owner=owner)
+
+    with django_assert_num_queries(4):
+        result = GadgetRepository().find(GadgetWhereDto())
+
+    assert {dto.owner_id for dto in result.all} == {str(owner.uuid)}
+
+
+def test_find_with_select_related_fields_avoids_query_per_result(
+    django_assert_num_queries,
+):
+    owner = Widget.objects.create(name="owner")
+    widget = Widget.objects.create(name="widget")
+    for i in range(3):
+        Gadget.objects.create(name=f"gadget-{i}", widget=widget, owner=owner)
+
+    with django_assert_num_queries(1):
+        result = GadgetWithSelectRelatedRepository().find(GadgetWhereDto())
+
+    assert {dto.owner_id for dto in result.all} == {str(owner.uuid)}
+
+
+def test_find_with_select_related_fields_returns_none_for_soft_deleted_owner():
+    owner = Widget.objects.create(name="owner")
+    widget = Widget.objects.create(name="widget")
+    Gadget.objects.create(name="gadget", widget=widget, owner=owner)
+    owner.soft_delete()
+
+    result = GadgetWithSelectRelatedRepository().find(GadgetWhereDto())
+
+    assert [dto.owner_id for dto in result.all] == [None]
+
+
+def test_find_with_select_related_fields_returns_none_for_null_owner():
+    widget = Widget.objects.create(name="widget")
+    Gadget.objects.create(name="gadget", widget=widget)
+
+    result = GadgetWithSelectRelatedRepository().find(GadgetWhereDto())
+
+    assert [dto.owner_id for dto in result.all] == [None]
