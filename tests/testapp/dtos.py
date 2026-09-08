@@ -49,6 +49,7 @@ class GadgetDto(BaseDto):
 class GadgetCreateDto(CreateDto):
     name: str
     widget_id: str
+    owner_id: str | None = None
 
 
 class GadgetUpdateDto(UpdateDto):

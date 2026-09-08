@@ -10,6 +10,7 @@ from dddk import (
 from tests.testapp.dtos import (
     GadgetWhereDto,
     WidgetWhereDto,
+    GadgetCreateDto,
     GadgetUpdateDto,
     WidgetCreateDto,
     WidgetUpdateDto,
@@ -52,6 +53,61 @@ def test_create_many_with_empty_list_returns_empty_query_response():
     result = repository.create_many([])
     assert result.all == []
     assert Widget.objects.count() == 0
+
+
+def test_create_many_without_select_related_fields_queries_owner_per_result(
+    django_assert_num_queries,
+):
+    widget = Widget.objects.create(name="widget")
+    owner = Widget.objects.create(name="owner")
+
+    with django_assert_num_queries(4):
+        result = GadgetRepository().create_many(
+            [
+                GadgetCreateDto(
+                    name=f"gadget-{i}",
+                    widget_id=str(widget.uuid),
+                    owner_id=str(owner.uuid),
+                )
+                for i in range(3)
+            ]
+        )
+
+    assert {dto.owner_id for dto in result.all} == {str(owner.uuid)}
+
+
+def test_create_many_with_select_related_fields_avoids_query_per_result(
+    django_assert_num_queries,
+):
+    widget = Widget.objects.create(name="widget")
+    owner = Widget.objects.create(name="owner")
+
+    with django_assert_num_queries(2):
+        result = GadgetWithSelectRelatedRepository().create_many(
+            [
+                GadgetCreateDto(
+                    name=f"gadget-{i}",
+                    widget_id=str(widget.uuid),
+                    owner_id=str(owner.uuid),
+                )
+                for i in range(3)
+            ]
+        )
+
+    assert {dto.owner_id for dto in result.all} == {str(owner.uuid)}
+
+
+def test_create_many_with_select_related_fields_preserves_input_order():
+    widget = Widget.objects.create(name="widget")
+
+    result = GadgetWithSelectRelatedRepository().create_many(
+        [
+            GadgetCreateDto(name=name, widget_id=str(widget.uuid))
+            for name in ["a", "b", "c"]
+        ]
+    )
+
+    assert [dto.name for dto in result.all] == ["a", "b", "c"]
 
 
 def test_find_without_filters_returns_only_active_records():

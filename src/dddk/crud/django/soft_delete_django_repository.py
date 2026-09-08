@@ -72,7 +72,8 @@ class SoftDeleteDjangoRepository(
             `WHERE` DTO and Django ORM filter expressions.
         select_related_fields (tuple[str, ...]): FK field names that `as_dto()`
             dereferences (e.g. through `get_if_active`) and that should be joined
-            in the `find()` query via `select_related`, avoiding a query per row.
+            via `select_related` in `find()` and `create_many()`, avoiding a
+            query per row/per FK.
     """
 
     response: type[RESPONSE]
@@ -122,26 +123,47 @@ class SoftDeleteDjangoRepository(
 
     def create_many(self, creates: list[CREATE]) -> QueryResponse[DTO, None]:
         """
-        Create a new record in the database from the given `CREATE` DTO.
+        Create many records in the database from the given `CREATE` DTOs.
+
+        The instances `bulk_create` returns only carry the scalar columns
+        that were written (including `*_id` FK columns), never the related
+        objects themselves. If `select_related_fields` is set, `as_dto()`
+        dereferencing one of those FKs (e.g. through `get_if_active`) would
+        otherwise fire one extra query per row per FK; this re-fetches the
+        created rows in a single `select_related` query first, the same way
+        `find()` already does, to avoid that.
 
         Args:
-            create (CREATE): DTO containing field values for the new record.
+            creates (list[CREATE]): DTOs containing field values for the new
+                records.
 
         Returns:
-            DTO: A Pydantic DTO representing the newly created entity.
+            QueryResponse[DTO, None]: The newly created entities as DTOs.
         """
         if not creates:
             return QueryResponse([], self.model._meta.db_table)
 
         instances = [self.model(**create.model_dump()) for create in creates]
 
-        created = self.model.objects.bulk_create(
-            instances,
-            batch_size=500,
-        )
+        self.model.objects.bulk_create(instances, batch_size=500)
+
+        if not self.select_related_fields:
+            return QueryResponse(
+                [cast(DTO, instance.as_dto()) for instance in instances],
+                self.model._meta.db_table,
+            )
+
+        pk_field = self.model._meta.pk.name
+        pks = [getattr(instance, pk_field) for instance in instances]
+        by_pk = {
+            getattr(obj, pk_field): obj
+            for obj in self.model.objects.filter(
+                **{f"{pk_field}__in": pks}
+            ).select_related(*self.select_related_fields)
+        }
 
         return QueryResponse(
-            [cast(DTO, instance.as_dto()) for instance in created],
+            [cast(DTO, by_pk[pk].as_dto()) for pk in pks],
             self.model._meta.db_table,
         )
 
