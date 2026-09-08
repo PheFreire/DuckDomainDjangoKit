@@ -42,6 +42,13 @@ class Gadget(SoftDeleteModel):
         blank=True,
         related_name="owned_gadgets",
     )
+    reviewer = models.ForeignKey(
+        Widget,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="reviewed_gadgets",
+    )
 
     class Meta:
         app_label = "testapp"
@@ -52,6 +59,9 @@ class Gadget(SoftDeleteModel):
             name=self.name,
             widget_id=str(self.widget_id),
             owner_id=get_if_active(self.owner) if self.owner else None,
+            reviewer_id=(
+                get_if_active(self.reviewer) if self.reviewer else None
+            ),
             created_at=self.created_at,
             updated_at=self.updated_at,
             deleted_at=self.deleted_at,

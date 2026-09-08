@@ -41,6 +41,7 @@ class GadgetDto(BaseDto):
     name: str
     widget_id: str
     owner_id: str | None = None
+    reviewer_id: str | None = None
     created_at: datetime
     updated_at: datetime
     deleted_at: datetime | None = None
@@ -50,11 +51,14 @@ class GadgetCreateDto(CreateDto):
     name: str
     widget_id: str
     owner_id: str | None = None
+    reviewer_id: str | None = None
 
 
 class GadgetUpdateDto(UpdateDto):
     name: NullOr[str] = Field(default=Null)
     widget_id: NullOr[str] = Field(default=Null)
+    owner_id: NullOr[str] = Field(default=Null)
+    reviewer_id: NullOr[str] = Field(default=Null)
 
 
 class GadgetWhereDto(WhereDto):

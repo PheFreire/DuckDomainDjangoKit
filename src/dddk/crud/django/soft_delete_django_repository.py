@@ -72,8 +72,8 @@ class SoftDeleteDjangoRepository(
             `WHERE` DTO and Django ORM filter expressions.
         select_related_fields (tuple[str, ...]): FK field names that `as_dto()`
             dereferences (e.g. through `get_if_active`) and that should be joined
-            via `select_related` in `find()` and `create_many()`, avoiding a
-            query per row/per FK.
+            via `select_related` in `find()`, `create_many()` and `update()`,
+            avoiding a query per row/per FK.
     """
 
     response: type[RESPONSE]
@@ -216,6 +216,15 @@ class SoftDeleteDjangoRepository(
         Update an existing record identified by its id using data from the
         provided `UPDATE` DTO. Fields set to `Null` are ignored.
 
+        The instance fetched here only carries its scalar columns (including
+        `*_id` FK columns), never the related objects. If
+        `select_related_fields` is set, `as_dto()` dereferencing one of those
+        FKs (e.g. through `get_if_active`) would otherwise fire one extra
+        query per FK; this re-fetches the saved row in a single
+        `select_related` query first, the same way `find()` and
+        `create_many()` do, to avoid that (and to return fresh related data
+        when the update itself changed one of those FKs).
+
         Args:
             id (str): The unique identifier (id) of the record to update.
             update (UPDATE): DTO specifying the new field values.
@@ -244,7 +253,17 @@ class SoftDeleteDjangoRepository(
 
         assert instance is not None
         instance.save()
-        return cast(DTO, instance.as_dto())
+
+        if not self.select_related_fields:
+            return cast(DTO, instance.as_dto())
+
+        saved = (
+            self.model.objects.filter(pk=id)
+            .select_related(*self.select_related_fields)
+            .first()
+        )
+        assert saved is not None
+        return cast(DTO, saved.as_dto())
 
     def delete(self, id: str) -> str:
         """

@@ -23,6 +23,7 @@ from tests.testapp.repositories import (
     GadgetRepository,
     WidgetRepository,
     GadgetWithSelectRelatedRepository,
+    GadgetWithMultiSelectRelatedRepository,
 )
 
 pytestmark = pytest.mark.django_db
@@ -214,6 +215,59 @@ def test_update_supports_fk_id_suffix_field():
     )
 
     assert updated.widget_id == str(widget_b.uuid)
+
+
+def test_update_without_select_related_fields_queries_related_row_per_fk(
+    django_assert_num_queries,
+):
+    widget = Widget.objects.create(name="widget")
+    owner = Widget.objects.create(name="owner")
+    reviewer = Widget.objects.create(name="reviewer")
+    gadget = Gadget.objects.create(
+        name="gadget", widget=widget, owner=owner, reviewer=reviewer
+    )
+
+    with django_assert_num_queries(4):
+        updated = GadgetRepository().update(
+            str(gadget.uuid), GadgetUpdateDto(name="renamed")
+        )
+
+    assert updated.name == "renamed"
+
+
+def test_update_with_select_related_fields_avoids_query_per_fk(
+    django_assert_num_queries,
+):
+    widget = Widget.objects.create(name="widget")
+    owner = Widget.objects.create(name="owner")
+    reviewer = Widget.objects.create(name="reviewer")
+    gadget = Gadget.objects.create(
+        name="gadget", widget=widget, owner=owner, reviewer=reviewer
+    )
+
+    with django_assert_num_queries(3):
+        updated = GadgetWithMultiSelectRelatedRepository().update(
+            str(gadget.uuid), GadgetUpdateDto(name="renamed")
+        )
+
+    assert updated.name == "renamed"
+    assert updated.owner_id == str(owner.uuid)
+    assert updated.reviewer_id == str(reviewer.uuid)
+
+
+def test_update_with_select_related_fields_returns_fresh_data_after_fk_change():
+    widget = Widget.objects.create(name="widget")
+    old_owner = Widget.objects.create(name="old-owner")
+    new_owner = Widget.objects.create(name="new-owner")
+    gadget = Gadget.objects.create(
+        name="gadget", widget=widget, owner=old_owner
+    )
+
+    updated = GadgetWithMultiSelectRelatedRepository().update(
+        str(gadget.uuid), GadgetUpdateDto(owner_id=str(new_owner.uuid))
+    )
+
+    assert updated.owner_id == str(new_owner.uuid)
 
 
 def test_update_raises_app_error_when_not_found():

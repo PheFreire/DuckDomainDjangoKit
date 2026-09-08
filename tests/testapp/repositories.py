@@ -52,3 +52,7 @@ class GadgetRepository(
 
 class GadgetWithSelectRelatedRepository(GadgetRepository):
     select_related_fields = ("owner",)
+
+
+class GadgetWithMultiSelectRelatedRepository(GadgetRepository):
+    select_related_fields = ("owner", "reviewer")
